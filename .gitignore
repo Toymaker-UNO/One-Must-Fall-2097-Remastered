@@ -1,0 +1,30 @@
+# 빌드 결과물
+build/
+
+# 실행 파일
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 오브젝트 파일
+*.o
+*.obj
+*.a
+*.lib
+
+# IDE 및 캐시
+.idea/
+.vscode/
+.cache/
+*.swp
+*.swo
+*~
+
+# 임시 파일
+*.tmp
+*.temp
+*.log
+
+# Git 관련
+*.orig
