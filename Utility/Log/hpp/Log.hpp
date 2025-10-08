@@ -125,14 +125,6 @@ private:
 
 } // namespace omf
 
-// C interface functions
-extern "C" {
-    void log_c_init(const char* filename);
-    void log_c_finalize(void);
-    void log_c_set_level(int level);
-    void log_c_print(int level, const char* file, int line, const char* fmt, ...);
-}
-
 #ifdef __cplusplus
 }
 #endif
