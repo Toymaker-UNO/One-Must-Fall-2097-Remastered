@@ -5,6 +5,7 @@
 #include "utils/crash.h"
 #include <assert.h>
 #include <png.h>
+#include <string.h>
 
 static_assert(PNG_LIBPNG_VER >= 10600, "libpng version should be 1.6.0 or later");
 
@@ -76,12 +77,12 @@ bool write_paletted_png(const char *filename, int w, int h, const vga_palette *p
 #else // PNG_FOUND
 
 bool png_write_rgb(const char *filename, int w, int h, const unsigned char *data, bool has_alpha, bool flip) {
-    PERROR("PNG writing is not supported in current build!");
+    log_error("PNG writing is not supported in current build!");
     return false;
 }
 
 bool png_write_paletted(const char *filename, int w, int h, const vga_palette *pal, const unsigned char *data) {
-    PERROR("PNG writing is not supported in current build!");
+    log_error("PNG writing is not supported in current build!");
     return false;
 }
 

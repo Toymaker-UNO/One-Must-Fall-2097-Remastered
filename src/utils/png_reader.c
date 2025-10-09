@@ -90,7 +90,8 @@ bool read_paletted_png(const char *filename, unsigned char *dst) {
 #else // PNG_FOUND
 
 bool png_read_paletted(const char *filename, unsigned char *dst) {
-    PERROR("PNG reading is not supported in current build!");
+    //PERROR("PNG reading is not supported in current build!");
+    log_error("PNG reading is not supported in current build!");
     return false;
 }
 

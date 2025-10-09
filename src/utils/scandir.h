@@ -1,6 +1,7 @@
 #ifndef SCANDIR_H
 #define SCANDIR_H
 
+#include <stdbool.h>
 #include "utils/list.h"
 
 int scan_directory(list *dir_list, const char *dir);

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "formats/taglist.h"
 
 // This file is generated automatically
