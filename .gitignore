@@ -10,7 +10,6 @@ build/
 # 오브젝트 파일
 *.o
 *.obj
-*.a
 *.lib
 
 # IDE 및 캐시
