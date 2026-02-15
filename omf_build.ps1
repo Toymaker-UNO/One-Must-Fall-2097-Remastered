@@ -1,7 +1,7 @@
 # Simple Direct Build Script for One Must Fall 2097
 Write-Host "=== C++ Build Started ===" -ForegroundColor Magenta
 
-# 설정
+# Settings
 $SRC_DIR = "src"
 $BUILD_DIR = "build"
 $GAME_RESOURCES_DIR = "resources/game_resources"
@@ -9,11 +9,11 @@ $VCPKG_LIB_DIR = "lib/bin"
 $VCPKG_INCLUDE_DIR = "lib/include"
 $OUTPUT_NAME = "openomf.exe"
 
-# 컴파일러 설정
+# Compiler
 $CC = "gcc"
 $CXX = "g++"
 
-# C 컴파일러 플래그
+# C flags
 $CFLAGS = @()
 $CFLAGS += "-std=c11"
 $CFLAGS += "-O2"
@@ -47,7 +47,7 @@ $CFLAGS += "string.h"
 $CFLAGS += "-include"
 $CFLAGS += "stdbool.h"
 
-# C++ 컴파일러 플래그
+# C++ flags
 $CXXFLAGS = @()
 $CXXFLAGS += "-std=c++17"
 $CXXFLAGS += "-O2"
@@ -71,7 +71,7 @@ $CXXFLAGS += "-DV_MINOR=0"
 $CXXFLAGS += "-DV_PATCH=0"
 $CXXFLAGS += "-DPERROR=printf"
 
-# 링커 플래그
+# Linker flags
 $LDFLAGS = @()
 $LDFLAGS += "-L$VCPKG_LIB_DIR"
 $LDFLAGS += "-lSDL2"
@@ -104,25 +104,25 @@ $LDFLAGS += "-lshlwapi"
 $LDFLAGS += "-lmingw32"
 $LDFLAGS += "-mconsole"
 
-# 빌드 디렉토리 정리 및 생성
+# Build dir
 Write-Host "Cleaning build directory..." -ForegroundColor Yellow
 if (Test-Path $BUILD_DIR) {
     Remove-Item -Recurse -Force $BUILD_DIR
 }
 New-Item -ItemType Directory -Path $BUILD_DIR | Out-Null
 
-# 소스 파일 수집
+# Collect sources
 Write-Host "Collecting source files..." -ForegroundColor Yellow
 $C_FILES = Get-ChildItem -Path $SRC_DIR -Recurse -Filter "*.c" | ForEach-Object { $_.FullName }
 $CPP_FILES = Get-ChildItem -Path $SRC_DIR -Recurse -Filter "*.cpp" | ForEach-Object { $_.FullName }
 Write-Host "Found $($C_FILES.Count) C source files" -ForegroundColor Green
 Write-Host "Found $($CPP_FILES.Count) C++ source files" -ForegroundColor Green
 
-# 컴파일
+# Compile
 Write-Host "Compiling..." -ForegroundColor Yellow
 $OBJECT_FILES = @()
 
-# C 파일들 컴파일
+# Compile C files
 foreach ($source_file in $C_FILES) {
     $object_file = $source_file -replace "\.c$", ".o"
     $object_file = $object_file -replace "src\\", "$BUILD_DIR\\"
@@ -130,8 +130,8 @@ foreach ($source_file in $C_FILES) {
     if (!(Test-Path $object_dir)) {
         New-Item -ItemType Directory -Path $object_dir -Force | Out-Null
     }
-    
-    $compile_args = @($CFLAGS; $source_file; "-c"; "-o"; $object_file)
+
+    $compile_args = $CFLAGS + @($source_file, "-c", "-o", $object_file)
     Write-Host "Compiling C: $source_file..." -ForegroundColor Cyan
     & $CC @compile_args
     if ($LASTEXITCODE -ne 0) {
@@ -141,7 +141,7 @@ foreach ($source_file in $C_FILES) {
     $OBJECT_FILES += $object_file
 }
 
-# C++ 파일들 컴파일
+# Compile C++ files
 foreach ($source_file in $CPP_FILES) {
     $object_file = $source_file -replace "\.cpp$", ".o"
     $object_file = $object_file -replace "src\\", "$BUILD_DIR\\"
@@ -149,8 +149,8 @@ foreach ($source_file in $CPP_FILES) {
     if (!(Test-Path $object_dir)) {
         New-Item -ItemType Directory -Path $object_dir -Force | Out-Null
     }
-    
-    $compile_args = @($CXXFLAGS; $source_file; "-c"; "-o"; $object_file)
+
+    $compile_args = $CXXFLAGS + @($source_file, "-c", "-o", $object_file)
     Write-Host "Compiling C++: $source_file..." -ForegroundColor Cyan
     & $CXX @compile_args
     if ($LASTEXITCODE -ne 0) {
@@ -160,9 +160,9 @@ foreach ($source_file in $CPP_FILES) {
     $OBJECT_FILES += $object_file
 }
 
-# 오브젝트 파일들을 C++ 링커로 링크
+# Link
 Write-Host "Linking..." -ForegroundColor Yellow
-$LINK_ARGS = @($OBJECT_FILES; $LDFLAGS; "-o"; "$BUILD_DIR/$OUTPUT_NAME")
+$LINK_ARGS = $OBJECT_FILES + $LDFLAGS + @("-o", "$BUILD_DIR/$OUTPUT_NAME")
 
 try {
     & $CXX @LINK_ARGS
@@ -177,15 +177,15 @@ try {
     exit 1
 }
 
-# 리소스 복사
+# Copy resources
 Write-Host "Copying game resources..." -ForegroundColor Yellow
 if (Test-Path $GAME_RESOURCES_DIR) {
     $RESOURCE_BUILD_DIR = "$BUILD_DIR/resources"
     New-Item -ItemType Directory -Path $RESOURCE_BUILD_DIR -Force | Out-Null
-    
+
     $RESOURCE_FILES = Get-ChildItem -Path $GAME_RESOURCES_DIR -File
     $COPIED_COUNT = 0
-    
+
     foreach ($file in $RESOURCE_FILES) {
         try {
             Copy-Item -Path $file.FullName -Destination "$RESOURCE_BUILD_DIR/$($file.Name)" -Force
@@ -194,21 +194,21 @@ if (Test-Path $GAME_RESOURCES_DIR) {
             Write-Host "Failed to copy: $($file.Name)" -ForegroundColor Red
         }
     }
-    
+
     Write-Host "Copied $COPIED_COUNT resource files" -ForegroundColor Green
 } else {
     Write-Host "Game resources directory not found!" -ForegroundColor Red
 }
 
-# 셰이더 파일 복사
+# Copy shaders
 Write-Host "Copying shader files..." -ForegroundColor Yellow
 if (Test-Path "resources/shaders") {
     $SHADER_BUILD_DIR = "$BUILD_DIR/shaders"
     New-Item -ItemType Directory -Path $SHADER_BUILD_DIR -Force | Out-Null
-    
+
     $SHADER_FILES = Get-ChildItem -Path "resources/shaders" -File
     $COPIED_COUNT = 0
-    
+
     foreach ($file in $SHADER_FILES) {
         try {
             Copy-Item -Path $file.FullName -Destination "$SHADER_BUILD_DIR/$($file.Name)" -Force
@@ -217,7 +217,7 @@ if (Test-Path "resources/shaders") {
             Write-Host "Failed to copy shader: $($file.Name)" -ForegroundColor Red
         }
     }
-    
+
     Write-Host "Copied $COPIED_COUNT shader files" -ForegroundColor Green
 } else {
     Write-Host "Shaders directory not found!" -ForegroundColor Red
@@ -225,4 +225,3 @@ if (Test-Path "resources/shaders") {
 
 Write-Host "=== Build Completed ===" -ForegroundColor Magenta
 Write-Host "Executable: $BUILD_DIR/$OUTPUT_NAME" -ForegroundColor Cyan
-
