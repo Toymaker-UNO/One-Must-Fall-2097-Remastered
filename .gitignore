@@ -27,3 +27,6 @@ build/
 
 # Git 관련
 *.orig
+
+# COLA 디렉토리 이하 전체 무시
+COLA/
