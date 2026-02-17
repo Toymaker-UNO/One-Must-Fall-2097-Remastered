@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+      "COLA-MVP": {
+        "command": "python",
+        "args": ["COLA/ColaMcpServer.py"]
+      }
+    }
+  }
