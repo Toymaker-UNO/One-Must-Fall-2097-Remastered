@@ -1,7 +1,7 @@
 #ifndef OPENOMF_EXTERNALLIBRARY_OPUSFILE_HPP
 #define OPENOMF_EXTERNALLIBRARY_OPUSFILE_HPP
 
-#include <opusfile.h>
+#include <opus/opusfile.h>
 
 namespace openomf {
 namespace external_library {

@@ -1,7 +1,7 @@
 #ifndef OPENOMF_EXTERNALLIBRARY_SDL2_MIXER_HPP
 #define OPENOMF_EXTERNALLIBRARY_SDL2_MIXER_HPP
 
-#include <SDL_mixer.h>
+#include <SDL2/SDL_mixer.h>
 
 namespace openomf {
 namespace external_library {
@@ -44,8 +44,8 @@ public:
     }
 
     /** 채널에서 페이드 인하며 샘플 재생. */
-    static int omf_mix_fade_in_channel_timed(int a_channel, const Mix_Chunk* a_chunk, int a_loops, int a_ticks) {
-        return Mix_FadeInChannelTimed(a_channel, a_chunk, a_loops, a_ticks);
+    static int omf_mix_fade_in_channel_timed(int a_channel, Mix_Chunk* a_chunk, int a_loops, int a_ms, int a_ticks) {
+        return Mix_FadeInChannelTimed(a_channel, a_chunk, a_loops, a_ms, a_ticks);
     }
 
     /** 채널 페이드 아웃. */

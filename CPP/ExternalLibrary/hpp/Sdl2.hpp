@@ -1,7 +1,7 @@
 #ifndef OPENOMF_EXTERNALLIBRARY_SDL2_HPP
 #define OPENOMF_EXTERNALLIBRARY_SDL2_HPP
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 namespace openomf {
 namespace external_library {
