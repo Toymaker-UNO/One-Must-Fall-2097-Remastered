@@ -6,6 +6,7 @@
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -35,6 +36,9 @@ public:
 
     /** 네트워크 바이트 오더를 호스트 바이트 오더로 변환. */
     static std::uint32_t omf_ntohl(std::uint32_t a_netlong) { return ::ntohl(a_netlong); }
+
+    /** 파일 접근 가능 여부 (mode: F_OK 등, &lt;unistd.h&gt;). */
+    static int omf_access(const char* a_pathname, int a_mode) { return ::access(a_pathname, a_mode); }
 #endif
 };
 

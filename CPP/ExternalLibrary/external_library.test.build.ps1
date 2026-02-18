@@ -1,5 +1,5 @@
 # ExternalLibrary 테스트 빌드 (최소 구성)
-# 아무 위치에서 실행 가능: .\CPP\ExternalLibrary\build_test.ps1
+# 아무 위치에서 실행 가능: .\CPP\ExternalLibrary\external_library.test.build.ps1
 
 $ErrorActionPreference = "Stop"
 $Root = $PSScriptRoot
@@ -7,11 +7,11 @@ $Root = $PSScriptRoot
 $ProjRoot = (Resolve-Path (Join-Path $Root "..\..") -ErrorAction SilentlyContinue).Path
 if (-not $ProjRoot) { $ProjRoot = (Get-Location).Path }
 
-$Src = Join-Path $Root "external_library_test.main.cpp"
+$Src = Join-Path $Root "external_library.test.main.cpp"
 $IncludeHpp = $Root
 $IncludeLibs = Join-Path $Root "bin\include"
 $IncludeVendored = Join-Path $ProjRoot "C\src\vendored"
-$Out = Join-Path $Root "external_library_test.exe"
+$Out = Join-Path $Root "external_library.test.exe"
 
 $Cxx = "g++"
 $Args = @(
