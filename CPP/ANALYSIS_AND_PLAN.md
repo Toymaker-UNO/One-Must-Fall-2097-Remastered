@@ -91,8 +91,31 @@
    - Utils 빌드 스크립트로 해당 모듈만 컴파일·링크하여 시험.
 
 3. **Formats → Resources 순차 이식**
-   - Formats는 reader/writer, palette, pcx, bk, af 등 순으로 이식하고 Utils(및 필요 시 ExternalLibrary)만 의존하도록 유지.
+   - Formats는 아래 **3.1 Formats 내부 이식 순서**대로 이식하고 Utils(및 필요 시 ExternalLibrary)만 의존하도록 유지.
    - Resources는 pathmanager, ids, bk_loader, af_loader 등 Formats·Utils 기반으로 이식.
+
+### 3.1 Formats 내부 이식 순서 (상세)
+
+의존 관계에 따라 아래 순서로 진행한다. 각 항목은 CPP/Formats/hpp 에 .hpp 로 구현.
+
+| 순서 | 항목 | C 대응 | 비고 |
+|------|------|--------|------|
+| 1 | Reader, Writer, MemReader, MemWriter | internal/reader, writer, memreader, memwriter | 파일/메모리 I/O 기반 |
+| 2 | Error | formats/error.h | SdError enum |
+| 3 | Palette | palette.h/c | VgaColor, VgaPalette, VgaRemapTables, load/save, remaps_init |
+| 4 | VgaImage | vga_image.h/c | create, copy, free (PNG·RGBA decode는 추후) |
+| 5 | Pcx | pcx.h/c | PcxFile, pcx_load, pcx_load_font, pcx_font_decode, pcx_free |
+| 6 | Bk (1차) | bk.h/c | BkFile, create, free, load_from_pcx, get_background, get_palette |
+| 7 | ColCoord | colcoord.h | sd_coord 구조체 |
+| 8 | Sprite | sprite.h/c | sd_sprite, create, copy, free, load, save (vga_decode 등 추후) |
+| 9 | Animation | animation.h/c | sd_animation, create, copy, free, load, save, coord/extra_string 접근 |
+| 10 | Bkanim | bkanim.h/c | sd_bk_anim, create, copy, free, load, save |
+| 11 | Bk (2차) | bk.h/c | sd_bk_load, sd_bk_save (전체 .BK 파일) |
+| 12 | Move | move.h/c | sd_move, create, copy, free, load, save |
+| 13 | AF | af.h/c | sd_af_file, create, copy, free, load, save |
+
+- **현재까지 완료**: 1～13 (Reader, Writer, MemReader, MemWriter, Error, Palette, VgaImage, Pcx, Bk 1차·2차, ColCoord, Sprite, Animation, Bkanim, Move, AF).
+- **다음 진행**: Formats 빌드·테스트로 컴파일/링크 검증.
 
 4. **Video / Audio / Controller**
    - Video: surface, image, vga_state, renderer 인터페이스, opengl3/null 렌더러 → ExternalLibrary(Sdl2, Epoxy) 사용.
@@ -123,6 +146,7 @@
 |------|----------|----------------|-------------|
 | ExternalLibrary | CPP/ExternalLibrary/ | external_library.test.build.ps1 | external_library.test.main.cpp |
 | Utils | CPP/Utils/ | utils.test.build.ps1 | utils.test.main.cpp |
+| Formats | CPP/Formats/ | formats.test.build.ps1 | formats.test.main.cpp |
 
 - **전체 실행**: 프로젝트 루트 또는 `CPP` 에서 `.\CPP\00_build_all_modules.ps1` 실행.
 

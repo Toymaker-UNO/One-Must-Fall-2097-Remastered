@@ -6,10 +6,11 @@ $ScriptDir = $PSScriptRoot
 $ProjRoot = (Resolve-Path (Join-Path $ScriptDir "..") -ErrorAction SilentlyContinue).Path
 if (-not $ProjRoot) { $ProjRoot = (Get-Location).Path }
 
-# 의존 순서: ExternalLibrary → Utils → (추후 Formats, Resources, Video, ...)
+# 의존 순서: ExternalLibrary → Utils → Formats → (추후 Resources, Video, ...)
 $Modules = @(
     @{ Name = "ExternalLibrary"; Script = "external_library.test.build.ps1"; Dir = "ExternalLibrary" },
-    @{ Name = "Utils";          Script = "utils.test.build.ps1";     Dir = "Utils" }
+    @{ Name = "Utils";          Script = "utils.test.build.ps1";     Dir = "Utils" },
+    @{ Name = "Formats";        Script = "formats.test.build.ps1";  Dir = "Formats" }
 )
 
 $Failed = @()
