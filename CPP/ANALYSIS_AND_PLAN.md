@@ -63,16 +63,17 @@
 ```
 [0] ExternalLibrary     (이미 존재, 빌드/연결 검증 완료)
 [1] Utils              (기반: allocator, array, str, log, config, io, …)
-[2] Vendored           (argtable3 → CPP에서는 CLI 래퍼 또는 대체)
-[3] Formats             (Utils 의존, 내부 reader/writer 등)
-[4] Resources           (Formats, Utils 의존)
-[5] Video               (Utils, ExternalLibrary[SDL2, Epoxy] 의존)
-[6] Audio               (Utils, ExternalLibrary[SDL2_mixer, LibXmp, Opusfile] 의존)
-[7] Controller          (Utils, ExternalLibrary[SDL2, Enet], Game 타입 일부)
-[8] Console             (Utils, Game 타입)
-[9] Game                (Video, Audio, Controller, Resources, Formats, Utils)
-[10] Engine + main      (전체 통합)
+[2] Formats             (Utils 의존, 내부 reader/writer 등)
+[3] Resources           (Formats, Utils 의존)
+[4] Video               (Utils, ExternalLibrary[SDL2, Epoxy] 의존)
+[5] Audio               (Utils, ExternalLibrary[SDL2_mixer, LibXmp, Opusfile] 의존)
+[6] Controller          (Utils, ExternalLibrary[SDL2, Enet], Game 타입 일부)
+[7] Console             (Utils, Game 타입)
+[8] Game                (Video, Audio, Controller, Resources, Formats, Utils)
+[9] Engine + main      (전체 통합)
 ```
+
+- **CPP 쪽 옵션 정책**: 실행 파일에서 명령줄 인자(argv)로 옵션을 받지 않는다. 여러 다양한 옵션은 **JSON 설정 파일**로 넣기로 한다. 설정 파일 이름은 **`omf_config.json`** 으로 통일하며, JSON 형식(키/구조)은 추후 설계·구현 시 정하기로 한다. 옵션 관련 설계/구현 시 이 정책을 반영할 것. (C의 vendored/argtable3 는 CPP 에서 사용하지 않음.)
 
 - **모듈별 C++ 빌드/컴파일 시험**: 각 모듈을 ExternalLibrary 와 동일한 방식으로 `모듈명.build.ps1` + `모듈명_test.main.cpp` 로 독립 컴파일 가능하게 구성.
 
@@ -140,3 +141,4 @@
 - 외부 라이브러리 목록·사용처: `CPP/ExternalLibrary/List.md`
 - C 빌드 스크립트: `C/00_build.ps1`
 - **규칙**: C 디렉터리는 수정하지 않고, 모든 변경은 CPP 이하에서만 수행. 외부 라이브러리는 `CPP/ExternalLibrary/hpp` 를 통해 사용.
+- **옵션 설정**: CPP 에서는 명령줄 인자 대신 **`omf_config.json`** 사용. JSON 형식은 추후 옵션 설계 시 정의.

@@ -1,7 +1,6 @@
 // ExternalLibrary 래퍼 헤더 포함 및 기본 동작 확인용 테스트.
-// 모든 ExternalLibrary/hpp/*.hpp 를 include 하고, 타입 존재 여부 등 최소 검사 후 종료.
+// 모든 ExternalLibrary/hpp/*.hpp (Argtable3 제외) include, 타입 존재 여부 등 최소 검사 후 종료.
 #define SDL_MAIN_HANDLED
-#include "hpp/Argtable3.hpp"
 #include "hpp/CStdLib.hpp"
 #include "hpp/Enet.hpp"
 #include "hpp/Epoxy.hpp"
@@ -27,7 +26,6 @@ static void test_types_exist()
     (void)sizeof(LibPng);
     (void)sizeof(Zlib);
     (void)sizeof(LibConfuse);
-    (void)sizeof(Argtable3);
     (void)sizeof(Enet);
     (void)sizeof(Opusfile);
     (void)sizeof(LibXmp);
