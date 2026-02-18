@@ -115,7 +115,50 @@
 | 13 | AF | af.h/c | sd_af_file, create, copy, free, load, save |
 
 - **현재까지 완료**: 1～13 (Reader, Writer, MemReader, MemWriter, Error, Palette, VgaImage, Pcx, Bk 1차·2차, ColCoord, Sprite, Animation, Bkanim, Move, AF).
-- **다음 진행**: Formats 빌드·테스트로 컴파일/링크 검증.
+- **Formats 빌드·테스트 검증 완료**: `formats.test.build.ps1`로 컴파일·링크 후 `formats.test.exe` 자동 실행으로 통과 확인. `00_build_all_modules.ps1`에서 ExternalLibrary → Utils → Formats 순서로 빌드 통과.
+- **Resources 모듈 이식 완료**: Ids, PathManager(최소), BkLoader, AfLoader. `resources.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
+- **Video 모듈 이식 (1차 완료)**: Enums, Color, Image, Surface(Formats VgaImage 연동), Renderer 인터페이스, NullRenderer, Video(video_scan_renderers, video_init, video_close). `video.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
+- **Audio 모듈 이식 (1차 완료)**: MusicSource, AudioBackend, NullBackend, Audio(audio_scan_backends, audio_get_backend_count/info, audio_init, audio_close). `audio.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
+- **Controller 모듈 이식 (1차 완료)**: ActionFlags, EventType, Controller(축약 버전), NullController(null_controller_init, tick/poll/rumble/rewind/free no-op). `controller.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
+- **다음 진행**: Console / Game / Engine 순차 이식.
+
+### 3.2 현재까지 안 한 것 / 추후 이식할 것 정리
+
+#### 3.2.1 현재까지 안 한 것 (미이식 모듈·기능)
+
+아직 CPP로 이식하지 않은 **모듈 전체** 또는 **모듈 단위 기능**이다.
+
+| 구분 | 항목 | C 대응 | 비고 |
+|------|------|--------|------|
+| **모듈** | Audio (1차 완료, SDL/PSM/Opus 미포함) | src/audio/ | 백엔드(sdl,null), PSM/Opus 소스 등 추후 이식 |
+| **모듈** | Controller (1차 완료, 키보드/네트워크 등 미포함) | src/controller/ | keyboard, joystick, ai, net, rec, spec, SDL2, Enet 등 추후 이식 |
+| **모듈** | Console | src/console/ | 콘솔 명령, game_state 의존 |
+| **모듈** | Game | src/game/ | game_state, protos, objects, gui, scenes (Video/Audio/Controller 등 의존) |
+| **모듈** | Engine + main | src/engine.c, main.c | 초기화·메인 루프, CLI 대신 omf_config.json |
+| **Formats** | PNG·RGBA 디코드 | vga_image, rgba 등 | VgaImage 확장, RGBA 이미지 (필요 시) |
+| **Formats** | Sprite vga_decode 등 | sprite.c | 스프라이트 디코딩 확장 |
+| **Resources** | PathManager 전체 | pathmanager.c | SDL 기반 pm_init, pm_get_local_base_dir, pm_validate_resources 등 |
+| **Resources** | 기타 로더·매니저 | fonts, languages, pilots, scores, sgmanager, sounds_loader, trnmanager 등 | 리소스 확장 |
+
+#### 3.2.2 추후 이식할 것 (이미 시작한 모듈 내 보류 항목)
+
+이미 1차 이식이 끝난 모듈 안에서, **의존성·범위** 때문에 나중 단계로 미룬 항목이다.
+
+| 모듈 | 항목 | C 대응 | 미룬 이유 |
+|------|------|--------|-----------|
+| **Video** | vga_state | vga_state.h/c | 팔레트/리맵 현재 상태 관리 → 실제 렌더러 이식 후 연동 |
+| **Video** | vga_palette (비디오 쪽) | vga_palette.h/c | tint/mix/light_range 등 → 렌더링 파이프라인과 함께 이식 |
+| **Video** | vga_remap | vga_remap.h/c | 리맵 테이블 → vga_state·렌더러와 함께 이식 |
+| **Video** | OpenGL3 렌더러 | renderers/opengl3/ | gl3_renderer, sdl_window, texture, shaders, FBO 등, Epoxy 의존 → Null로 API 검증 후 별도 단계 |
+| **Video** | video_draw* / video_render_* | video.c | draw_surface, render_prepare/finish 등 → 그리기 구현 렌더러 이식 후 |
+| **Video** | damage_tracker | damage_tracker.h/c | 더티 영역 등 → 렌더링·게임 연동 시 이식 |
+| **Video** | image_line, image_rect 등 | image.c | Image 확장 → 필요 시 이식 |
+| **Video** | surface_sub, surface_write_png 등 | surface.c | Surface 고급 연산 → 필요 시 이식 |
+| **Audio** | SDL 백엔드 | backends/sdl/sdl_backend | SDL2_mixer 의존 → 추후 이식 |
+| **Audio** | PSM/Opus 소스, audio_play_sound, audio_play_music 등 | sources/psm_source, opus_source, audio.c | LibXmp, Opusfile, Resources(sounds_loader, pathmanager) 의존 → 추후 이식 |
+| **Controller** | Keyboard/Joystick/AI/Net/Rec/Spec 컨트롤러 | keyboard, joystick, ai_controller, net_controller, rec_controller, spec_controller | SDL2, Enet, Game 타입(game_state, har, object) 의존 → Game/Net 이식 단계에서 함께 이식 |
+
+- **정리**: “현재까지 안 한 것”은 **아직 손대지 않은 모듈/기능**, “추후 이식할 것”은 **이미 뼈대를 이식한 모듈 안에서 다음 단계로 미룬 항목**이다.
 
 4. **Video / Audio / Controller**
    - Video: surface, image, vga_state, renderer 인터페이스, opengl3/null 렌더러 → ExternalLibrary(Sdl2, Epoxy) 사용.
@@ -147,6 +190,10 @@
 | ExternalLibrary | CPP/ExternalLibrary/ | external_library.test.build.ps1 | external_library.test.main.cpp |
 | Utils | CPP/Utils/ | utils.test.build.ps1 | utils.test.main.cpp |
 | Formats | CPP/Formats/ | formats.test.build.ps1 | formats.test.main.cpp |
+| Resources | CPP/Resources/ | resources.test.build.ps1 | resources.test.main.cpp |
+| Video | CPP/Video/ | video.test.build.ps1 | video.test.main.cpp |
+| Audio | CPP/Audio/ | audio.test.build.ps1 | audio.test.main.cpp |
+| Controller | CPP/Controller/ | controller.test.build.ps1 | controller.test.main.cpp |
 
 - **전체 실행**: 프로젝트 루트 또는 `CPP` 에서 `.\CPP\00_build_all_modules.ps1` 실행.
 

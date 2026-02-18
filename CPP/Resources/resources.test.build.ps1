@@ -1,4 +1,4 @@
-# Formats module build: Utils dependent (Reader/Writer use Io, Str, Allocator -> Log -> SDL2)
+# Resources module build: Formats + Utils dependent
 $ErrorActionPreference = "Stop"
 $Root = $PSScriptRoot
 $ProjRoot = (Resolve-Path (Join-Path $Root "..\..") -ErrorAction SilentlyContinue).Path
@@ -9,7 +9,8 @@ $ExtInclude = Join-Path $ExtLib "bin\include"
 $LibDir = Join-Path $ProjRoot "C\lib\bin"
 if (-not (Test-Path $LibDir)) { $LibDir = Join-Path $ExtLib "bin" }
 $Utils = Join-Path $Root "..\Utils"
-$Out = Join-Path $Root "formats.test.exe"
+$Formats = Join-Path $Root "..\Formats"
+$Out = Join-Path $Root "resources.test.exe"
 
 $Cxx = "g++"
 $IncludeArgs = @(
@@ -17,7 +18,9 @@ $IncludeArgs = @(
     "-mconsole",
     "-Wl,-subsystem,console",
     "-I", $Root,
+    "-I", (Join-Path $Root ".."),
     "-I", $Utils,
+    "-I", $Formats,
     "-I", $ExtLib,
     "-I", $ExtInclude
 )
@@ -42,17 +45,17 @@ $LinkArgs = @(
 )
 
 Get-ChildItem -Path $Root -Filter "*.o" -File -ErrorAction SilentlyContinue | Remove-Item -Force
-Write-Host "Building Formats module (test main)..."
-$TestMain = Join-Path $Root "formats.test.main.cpp"
-& $Cxx $IncludeArgs -c $TestMain -o (Join-Path $Root "formats.test.main.o")
+Write-Host "Building Resources module (test main)..."
+$TestMain = Join-Path $Root "resources.test.main.cpp"
+& $Cxx $IncludeArgs -c $TestMain -o (Join-Path $Root "resources.test.main.o")
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $Cxx (Join-Path $Root "formats.test.main.o") $LinkArgs -o $Out
+& $Cxx (Join-Path $Root "resources.test.main.o") $LinkArgs -o $Out
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-if (Test-Path (Join-Path $Root "formats.test.main.o")) { Remove-Item (Join-Path $Root "formats.test.main.o") -Force }
+if (Test-Path (Join-Path $Root "resources.test.main.o")) { Remove-Item (Join-Path $Root "resources.test.main.o") -Force }
 Write-Host "Done. Running test: $Out"
 & $Out
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Test failed with exit code $LASTEXITCODE" -ForegroundColor Red
     exit $LASTEXITCODE
 }
-Write-Host "Formats build and test verification passed." -ForegroundColor Green
+Write-Host "Resources build and test verification passed." -ForegroundColor Green

@@ -1,4 +1,5 @@
 // Formats 모듈 빌드/연결 검증: Reader, Writer, MemReader, MemWriter, Palette.
+#include <cstdio>
 #include "hpp/Types.hpp"
 #include "hpp/Reader.hpp"
 #include "hpp/Writer.hpp"
@@ -17,18 +18,19 @@ static void test_reader_writer()
 {
     const char* tmp = "formats.test.tmp";
     Writer* w = Writer::open(tmp);
-    if (!w) return;
+    if (!w) throw 0;
     w->write_udword(0x12345678u);
     w->write_ubyte(0xAB);
     w->write_uword(0x1234);
     w->close();
 
     Reader* r = Reader::open(tmp);
-    if (!r) return;
+    if (!r) throw 0;
     if (r->read_udword() != 0x12345678u) throw 1;
     if (r->read_ubyte() != 0xAB) throw 2;
     if (r->read_uword() != 0x1234u) throw 3;
     r->close();
+    (void)std::remove(tmp);
 }
 
 static void test_mem_reader_writer()
