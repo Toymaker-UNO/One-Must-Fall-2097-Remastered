@@ -43,7 +43,7 @@ inline int game_state_create_stub(game::GameState* gs, EngineInitFlags* init_fla
     std::memset(gs, 0, sizeof(game::GameState));
     gs->run = 1;
     gs->this_id = game::SCENE_MENU;
-    gs->next_id = game::SCENE_NONE;
+    gs->next_id = game::SCENE_MENU;  /* C와 동일: 초기에는 this_id == next_id 로 루프 유지 */
     gs->init_flags = init_flags;
 
     gs->sc = static_cast<game::Scene*>(omf_calloc(1, sizeof(game::Scene)));

@@ -69,6 +69,8 @@ inline int scene_create_with_resources(Scene* sc, GameState* gs, int scene_id) {
     if (bg) {
         video::Surface* sur = static_cast<video::Surface*>(omf_calloc(1, sizeof(video::Surface)));
         video::surface_create_from_vga(sur, bg);
+        // BK 팔레트 0번을 배경 Surface 팔레트로 연결 (C와 동일)
+        sur->palette = formats::bk_get_palette(sc->bk_data, 0);
         sc->background_surface = sur;
     }
     return 0;

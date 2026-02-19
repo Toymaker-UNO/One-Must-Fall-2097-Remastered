@@ -3,6 +3,7 @@
 
 #include "hpp/Image.hpp"
 #include "Formats/hpp/VgaImage.hpp"
+#include "Formats/hpp/Palette.hpp"
 #include "Utils/hpp/Allocator.hpp"
 #include <cstring>
 #include <cstdint>
@@ -17,6 +18,7 @@ struct Surface {
     int h = 0;
     int transparent = 0;
     unsigned char* data = nullptr;
+    const formats::VgaPalette* palette = nullptr; // 배경/스프라이트 팔레트 (없으면 nullptr)
 };
 
 namespace detail {

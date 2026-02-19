@@ -253,21 +253,26 @@
 | **사운드 API** | `audio_play_sound(id, volume, panning, pitch)`, `audio_play_music(resource_id)` 추가. Null 백엔드 no-op. 실제 재생은 sounds_loader/PSM·Opus 이식 후 |
 | **입력** | `KeyboardController.hpp`: SDL 키보드 → ACT_* 플래그. `GameState::menu_ctrl` 연결, `game_state_tick_controllers`·`game_state_static_tick`에서 `controller_tick(menu_ctrl)` 호출. Engine에서 keyboard_controller 생성·해제 |
 | **Formats** | `SdError`를 `openomf::formats` 네임스페이스로 이동해 BkLoader/SceneApi와 일치시킴 |
+| **초기 씬** | C와 동일하게 `gs->next_id = SCENE_MENU` 로 설정해 첫 틱에 즉시 종료되지 않고 메인 루프 유지 |
+| **리소스 경로** | main에서 `set_resource_base(base + "resources/" )` 로 C pathmanager(RESOURCE_PATH)와 동일하게 설정. Windows는 `resources\`, 그 외 `resources/` |
+| **OpenGL3 렌더러** | `Gl3Renderer.hpp` 최소 이식: SDL 창, OpenGL 3.3, clear/swap. OpenGL3를 video_scan_renderers에 먼저 등록. Engine 링크에 `-lepoxy`, `-lopengl32` 추가 |
+| **배경 실제 렌더링** | `Surface`에 `palette`(VgaPalette*) 추가. `scene_create_with_resources`에서 BK 팔레트 0번을 배경 Surface에 연결. Gl3Renderer `draw_surface`: 8비트 인덱스+팔레트→RGBA 변환, GL 텍스처 업로드, 풀스크린 quad(GLSL 330)로 그리기. `resources\MAIN.BK` 있으면 메뉴 배경이 창에 표시됨 |
 
 ### 6.2 발생한 오류 및 조치
 
 | 오류 | 원인 | 조치 |
 |------|------|------|
 | `'SdError' in namespace 'openomf::formats' does not name a type` (BkLoader/SceneApi) | `Error.hpp`의 `SdError`가 전역 네임스페이스에 있음 | `Error.hpp`에서 `SdError`를 `namespace openomf { namespace formats { ... } }` 안으로 이동 |
-| Engine 링크 실패: `undefined reference to __imp_SetupDiGetClassDevsA`, `ImmGetContext`, `CoInitializeEx` 등 | `C\lib\bin`의 **SDL2 정적 라이브러리**와 MinGW 링크 시 Windows 시스템 라이브러리 미지정 | `engine.build.ps1`에 `-lsetupapi`, `-limm32`, `-lole32`, `-lopengl32` 등 추가. 환경에 따라 추가 lib 필요하거나 **동적 SDL2**(.dll) 사용 필요 |
+| Engine 링크 실패: `undefined reference to __imp_SetupDiGetClassDevsA`, `ImmGetContext`, `CoInitializeEx` 등 | SDL2 정적 링크 시 MinGW에서 Windows 시스템 라이브러리 미지정 | C `00_build.ps1`과 동일한 링크 목록·순서 반영(`-lwinmm`, `-lws2_32`, `-lole32` 등). **해결됨** |
+| (없음) | - | OpenGL3 사용 시 `-lepoxy`, `-lopengl32` 링크 필요. `engine.build.ps1`에 반영됨 |
 
 ### 6.3 해결해야 할 문제점
 
 | 우선순위 | 문제 | 설명 | 권장 조치 |
 |----------|------|------|-----------|
-| **높음** | Engine(omf.exe) 링크 실패 | SDL2 정적 링크 시 MinGW에서 Windows 심볼 미해결. 컴파일은 성공, 링크만 실패 | (1) SDL2 동적 링크로 전환(`libSDL2.dll.a` + dll 배치) 또는 (2) 사용 중인 MinGW/SDL2 빌드에 맞는 시스템 라이브러리 목록 확정 후 `engine.build.ps1`에 반영 |
-| **높음** | 리소스 경로 | `set_resource_base(SDL_GetBasePath())`는 exe 디렉터리 기준. BK/PCX 등은 보통 `data/` 등 하위에 있음 | 실행 시 리소스가 exe 옆에 있도록 배치하거나, `set_resource_base`에 `base + "data"` 등 하위 경로 지정 옵션 추가 |
-| **중간** | 실제 화면 출력 없음 | NullRenderer는 `draw_surface`가 no-op. 배경 그리기 호출 경로는 있으나 픽셀 출력 없음 | OpenGL3(또는 소프트웨어) 렌더러 이식 후 `video_draw`가 실제로 그리도록 연동 |
+| ~~**높음**~~ | ~~Engine(omf.exe) 링크 실패~~ | ~~SDL2 정적 + MinGW~~ | **해결**: C와 동일 Windows lib 목록 반영 |
+| ~~**높음**~~ | ~~리소스 경로~~ | ~~exe 기준만 사용~~ | **해결**: `base + "resources/"` 로 설정. exe와 같은 위치에 `resources\` 폴더 및 MAIN.BK 등 배치 필요 |
+| ~~**중간**~~ | ~~배경 픽셀 미표시~~ | ~~draw_surface no-op~~ | **해결**: Surface 팔레트 연결 + Gl3Renderer에서 RGBA 변환·텍스처·풀스크린 quad 그리기 구현 |
 | **중간** | 사운드 미재생 | `audio_play_sound`/`audio_play_music` API만 있고, sounds_loader·PSM/Opus 미이식, Null 백엔드 | sounds_loader·SDL 백엔드 또는 PSM/Opus 소스 이식 후 재생 연동 |
 | **중간** | 설정·로그 미연동 | omf_config.json, settings_init/load, log_init 미구현 | 설정 파일 형식 정의 후 로드·엔진/비디오 옵션 연동. 로그는 Utils 이식 시 연동 |
 | **낮음** | 게임 플레이 불가 | 씬 배경만 로드·렌더 경로 있고, 오브젝트·HAR·메뉴 로직·개별 씬(mainmenu, arena 등) 미이식 | object_render, har_create, scene 콜백(메뉴/아레나 등) 단계적 이식 |
@@ -277,6 +282,39 @@
 
 | 항목 | 상태 |
 |------|------|
-| `.\CPP\00_build_all_modules.ps1` (Engine 제외 모듈) | 각 모듈별 스크립트 존재. Engine 제외 시 모두 성공 가정 (Engine은 링크 이슈) |
-| `.\CPP\Engine\engine.build.ps1` (omf.exe) | **컴파일 성공**, **링크 실패**(SDL2 정적 + MinGW 환경) |
-| 실행 파일 실행 | 링크가 성공한 환경에서만 가능. 리소스(MAIN.BK 등)는 exe 기준 경로에 필요 |
+| `.\CPP\00_build_all_modules.ps1` (Engine 제외 모듈) | 각 모듈별 스크립트 존재. Engine 제외 시 모두 성공 가정 |
+| `.\CPP\Engine\engine.build.ps1` (omf.exe) | **컴파일·링크 성공**. SDL2 + epoxy + opengl32 + Windows 시스템 라이브러리 링크 |
+| 실행 파일 실행 | omf.exe 실행 시 OpenGL 3.3 사용 가능하면 **창 표시** + **배경 이미지 표시**(BK 팔레트 적용). 리소스는 exe 기준 `resources\`(또는 `resources/`) 하위에 MAIN.BK 등 배치 필요 |
+
+---
+
+## 7. 작업 현황 요약: 완료된 것 vs 남은 것
+
+### 7.1 완료된 작업 (한 것)
+
+| 영역 | 완료 내용 |
+|------|-----------|
+| **빌드 인프라** | ExternalLibrary, Utils, Formats, Resources, Video, Audio, Controller, Console, Game 모듈별 `*.test.build.ps1` + 테스트 main. `00_build_all_modules.ps1`로 순차 빌드. Engine은 `engine.build.ps1`로 omf.exe 단일 실행 파일 빌드. |
+| **Formats** | Reader/Writer/MemReader/MemWriter, Error(SdError), Palette(VgaColor, VgaPalette, VgaRemapTables), VgaImage, Pcx, Bk(create/free, load, load_from_pcx, get_background, get_palette), ColCoord, Sprite, Animation, Bkanim, Move, AF. SdError는 openomf::formats 네임스페이스. |
+| **Resources** | Ids(ResourceId, get_resource_file), PathManager(set_resource_base, get_resource_path, get_resource_base), BkLoader(load_bk_file), AfLoader. |
+| **Video** | Enums, Color, Image, Surface(VgaImage 연동, **palette 포인터 추가**), Renderer 인터페이스, NullRenderer, **Gl3Renderer**(창·GL 컨텍스트·clear/swap, **draw_surface: 팔레트→RGBA·텍스처·풀스크린 quad**), Video(video_scan_renderers, video_init/close, video_render_prepare/finish, video_draw). |
+| **Audio** | MusicSource, AudioBackend, NullBackend, Audio(scan_backends, get_backend_count/info, init, close, **audio_play_sound**, **audio_play_music**). Null 백엔드 no-op. |
+| **Controller** | ActionFlags, EventType, Controller, NullController, **KeyboardController**(SDL 키→ACT_*). |
+| **Console** | 초기화, 창 열기/닫기, 이벤트/렌더/출력 stub. |
+| **Game** | CommonDefines, FightStats, Serial, TickTimer, PlayerState, Object, Scene, Intersect(선언). TickTimerApi, SerialApi, PlayerApi(stub), ObjectApi, **SceneApi**(scene_create_empty, **scene_create_with_resources**(BK/PCX 로드·배경 Surface·**BK 팔레트 0번 연결**), scene_init/free, scene_event/render/tick). Arena(stub). |
+| **Engine** | EngineInitFlags, game_state_create_stub(**next_id=SCENE_MENU**으로 루프 유지), game_state_is_running, game_state_free_stub, engine_init(video/audio/console), engine_close, **engine_run**(이벤트 루프, SDL_QUIT/콘솔 Tab, game_state_handle_event, static/dynamic_tick, video_render_prepare/finish, game_state_render, console_render). |
+| **main** | SDL_Init → **리소스 베이스 = base + "resources/"** → engine_init/run/close → SDL_Quit. |
+| **링크** | Engine 빌드 시 C와 동일 Windows lib 목록(SDL2, epoxy, opengl32, winmm, ws2_32, ole32 등). |
+
+### 7.2 남은 작업 (아직 하지 않은 것)
+
+| 영역 | 남은 내용 |
+|------|-----------|
+| **Audio** | SDL 백엔드, PSM/Opus 소스, sounds_loader·pathmanager 연동. audio_play_sound/music 실제 재생. |
+| **Controller** | Joystick, AI, Net(Enet), Rec, Spec 컨트롤러. |
+| **Console** | 실제 명령 등록/실행, 렌더링, 히스토리/버퍼. |
+| **Video** | vga_state, vga_palette(비디오 쪽), vga_remap. video_draw_remap/offset/size. damage_tracker, image_line/rect, surface_sub/surface_write_png. Gl3Renderer: 텍스처 아틀라스·리맵·고급 파이프라인(선택). |
+| **Game** | object_render(스프라이트 그리기), har_create, game_load_new·씬 전환 풀 로직. **개별 씬 로직**: mainmenu, mechlab, vs, melee, arena, newsroom, scoreboard, credits, cutscene, lobby, intro, openomf, end 등. GUI(component, menu, button, label 등). |
+| **Engine/main** | omf_config.json 설계·로드, settings_init/load, log_init. (선택) CLI 또는 설정으로 렌더러/오디오 백엔드 지정. |
+| **Formats** | PNG·RGBA 디코드 확장, Sprite vga_decode 확장. |
+| **Resources** | PathManager 전체(pm_validate_resources, pm_get_local_base_dir 등). fonts, languages, pilots, scores, sgmanager, sounds_loader, trnmanager 등 로더·매니저. |

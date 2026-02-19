@@ -3,6 +3,7 @@
 
 #include "hpp/Renderer.hpp"
 #include "hpp/NullRenderer.hpp"
+#include "hpp/Gl3Renderer.hpp"
 #include "hpp/Surface.hpp"
 #include <SDL2/SDL.h>
 #include <cstring>
@@ -29,6 +30,15 @@ inline static Renderer s_current = {};
 inline void video_scan_renderers() {
     s_renderer_count = 0;
     Renderer tmp = {};
+    /* OpenGL3 먼저 등록: 사용 가능하면 기본으로 창 표시 */
+    gl3_renderer_set_callbacks(&tmp);
+    if (tmp.is_available && tmp.is_available()) {
+        s_available[s_renderer_count].set_callbacks = gl3_renderer_set_callbacks;
+        s_available[s_renderer_count].name = tmp.get_name ? tmp.get_name() : "";
+        s_available[s_renderer_count].description = tmp.get_description ? tmp.get_description() : "";
+        s_renderer_count++;
+    }
+    tmp = {};
     null_renderer_set_callbacks(&tmp);
     if (tmp.is_available && tmp.is_available()) {
         s_available[s_renderer_count].set_callbacks = null_renderer_set_callbacks;

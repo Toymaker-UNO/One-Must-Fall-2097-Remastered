@@ -7,6 +7,7 @@
 #include "ExternalLibrary/hpp/Sdl2.hpp"
 #include "Resources/hpp/PathManager.hpp"
 #include <cstring>
+#include <string>
 
 int main(int /*argc*/, char** /*argv*/) {
     openomf::engine::EngineInitFlags init_flags;
@@ -15,8 +16,17 @@ int main(int /*argc*/, char** /*argv*/) {
     if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO) != 0)
         return 1;
 
+    /* C pathmanager: 리소스는 base + "resources/" 에서 로드 (pm_in_release_mode 시 RESOURCE_PATH) */
     char* base = SDL_GetBasePath();
-    openomf::resources::PathManager::set_resource_base(base ? base : ".");
+    std::string resource_base = base ? base : ".";
+    if (!resource_base.empty() && resource_base.back() != '/' && resource_base.back() != '\\')
+        resource_base += openomf::resources::PathManager::path_sep;
+#if defined(_WIN32) || defined(WIN32)
+    resource_base += "resources\\";
+#else
+    resource_base += "resources/";
+#endif
+    openomf::resources::PathManager::set_resource_base(resource_base.c_str());
     if (base)
         SDL_free(base);
 

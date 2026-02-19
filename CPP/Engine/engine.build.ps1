@@ -36,16 +36,15 @@ $CompileArgs = @(
     "-DSDL_MAIN_HANDLED"
 ) + $IncludeArgs
 
-$LinkArgs = @(
-    "-lmingw32",
-    "-mconsole"
-)
+$LinkArgs = @("-mconsole")
 $LibDir = Join-Path $ProjRoot "C\lib\bin"
 if (Test-Path $LibDir) {
     $LinkArgs = @("-L$LibDir") + $LinkArgs
+    # C/00_build.ps1 과 동일: SDL2 + Windows 시스템 라이브러리 (방법2 정적 링크)
     $LinkArgs += "-lSDL2"
-    # SDL2 정적 링크 시 MinGW에서 필요한 Windows 시스템 라이브러리
-    $LinkArgs += "-lsetupapi", "-limm32", "-lole32", "-loleaut32", "-lversion", "-lgdi32", "-luser32", "-lwinmm", "-lhid", "-ldxguid", "-lshell32", "-lcomdlg32", "-lopengl32", "-lpropsys", "-lbcrypt"
+    # OpenGL3 렌더러 (Gl3Renderer): epoxy + opengl32
+    $LinkArgs += "-lepoxy", "-lopengl32"
+    $LinkArgs += "-lwinmm", "-lws2_32", "-lole32", "-loleaut32", "-lsetupapi", "-limm32", "-lgdi32", "-luser32", "-ladvapi32", "-lshell32", "-lversion", "-lshlwapi", "-lmingw32"
 }
 
 Write-Host "Building Engine (omf.exe)..."
