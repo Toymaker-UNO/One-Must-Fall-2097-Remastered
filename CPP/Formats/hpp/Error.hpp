@@ -1,6 +1,9 @@
 #ifndef OPENOMF_FORMATS_ERROR_HPP
 #define OPENOMF_FORMATS_ERROR_HPP
 
+namespace openomf {
+namespace formats {
+
 /** C formats/error.h 대응. */
 enum class SdError {
     SUCCESS,
@@ -17,5 +20,8 @@ enum class SdError {
     FILE_UNLINK_ERROR,
     FAILURE,
 };
+
+} // namespace formats
+} // namespace openomf
 
 #endif // OPENOMF_FORMATS_ERROR_HPP

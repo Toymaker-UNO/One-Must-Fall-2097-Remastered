@@ -2,6 +2,7 @@
 #define OPENOMF_AUDIO_AUDIO_HPP
 
 #include "hpp/AudioBackend.hpp"
+#include "hpp/MusicSource.hpp"
 #include "hpp/NullBackend.hpp"
 #include <cstring>
 #include <cstddef>
@@ -82,6 +83,23 @@ inline void audio_close() {
     if (s_current.close_context) s_current.close_context(s_current.ctx);
     if (s_current.destroy) s_current.destroy(&s_current);
     std::memset(&s_current, 0, sizeof(AudioBackend));
+}
+
+/** C audio_play_sound. id로 샘플 재생. (sounds_loader 연동 전에는 버퍼 없이 no-op.) */
+inline int audio_play_sound(int id, float volume, float panning, int pitch) {
+    (void)id;
+    if (s_current.play_sound)
+        return s_current.play_sound(s_current.ctx, nullptr, 0, 44100, volume, panning, pitch, 0);
+    return -1;
+}
+
+/** C audio_play_music. resource_id(PSM_* 등)로 BGM 재생. (로더 연동 전에는 no-op.) */
+inline void audio_play_music(unsigned int resource_id) {
+    (void)resource_id;
+    if (s_current.play_music) {
+        MusicSource src = {};
+        s_current.play_music(s_current.ctx, &src);
+    }
 }
 
 } // namespace audio

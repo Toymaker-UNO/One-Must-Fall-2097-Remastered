@@ -79,6 +79,21 @@
 
 ---
 
+## 2.5 중간 점검 (현재 상태)
+
+- **이 과정이 끝나면 CPP에서 OMF 게임을 빌드·플레이할 수 있는가?**  
+  **아니요.** 현재 CPP에는 **Console**, **Game**(game_state, protos, objects, gui, scenes), **Engine**, **main**이 아직 이식되지 않았으므로, CPP만으로 **실행 가능한 게임 한 벌**을 빌드하는 타깃은 없다.  
+  **지금 가능한 것**: `.\CPP\00_build_all_modules.ps1` 실행 시 ExternalLibrary → Utils → Formats → Resources → Video → Audio → Controller까지 **모듈 단위**로 C++ 컴파일·링크·테스트 실행이 되며, 각 모듈의 동작만 검증된다. 전체 게임 런처/엔진/메인 루프는 없다.
+
+- **컴파일/빌드는 C++ 컴파일러·빌더를 사용하는가?**  
+  **예.** 각 모듈의 `*.test.build.ps1`은 **g++(C++ 컴파일러)**를 사용하며, `-std=c++17` 등으로 C++ 표준을 지정하고 링크도 g++로 수행한다. 따라서 CPP 이식이 완료된 뒤 전체 게임을 빌드할 때도 **C++ 컴파일러/빌더**를 사용하게 된다.
+
+- **정리**:  
+  - **게임 빌드·플레이**: Console → Game → Engine → main 이식 및 통합 빌드/실행 타깃이 추가된 뒤에야 CPP에서 OMF 게임을 빌드·플레이할 수 있다.  
+  - **빌드 도구**: 이미 CPP 쪽은 C++(g++) 기반이며, 앞으로도 C++ 컴파일러/빌더를 사용한다.
+
+---
+
 ## 3. 권장 작업 순서
 
 1. **모듈별 빌드/컴파일 시험 인프라 확립**
@@ -120,7 +135,10 @@
 - **Video 모듈 이식 (1차 완료)**: Enums, Color, Image, Surface(Formats VgaImage 연동), Renderer 인터페이스, NullRenderer, Video(video_scan_renderers, video_init, video_close). `video.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
 - **Audio 모듈 이식 (1차 완료)**: MusicSource, AudioBackend, NullBackend, Audio(audio_scan_backends, audio_get_backend_count/info, audio_init, audio_close). `audio.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
 - **Controller 모듈 이식 (1차 완료)**: ActionFlags, EventType, Controller(축약 버전), NullController(null_controller_init, tick/poll/rumble/rewind/free no-op). `controller.test.build.ps1` 및 `00_build_all_modules.ps1`에 반영.
-- **다음 진행**: Console / Game / Engine 순차 이식.
+- **Console 모듈 이식 (1차 stub 완료)**: `console.test.build.ps1`, `console.test.main.cpp`, 초기화/창 열기·닫기/출력 API stub. `00_build_all_modules.ps1`에 반영.
+- **Game/protos 타입 이식 완료**: Utils에 `Vec.hpp`(vec2i, vec2f) 추가. Game에 `CommonDefines.hpp`, `FightStats.hpp`, `Serial.hpp`, `TickTimer.hpp`, `PlayerState.hpp`, `Object.hpp`, `Scene.hpp`, `Intersect.hpp`(선언만) 추가.
+- **Game/objects·scenes API 이식 완료**: `ArenaConstraints.hpp`, `Har.hpp`(상수·enum), `TickTimerApi.hpp`, `SerialApi.hpp`, `PlayerApi.hpp`(player_create/player_free stub), `ObjectApi.hpp`(object_create, object_free, object_set_pos/get_pos, object_dynamic_tick 등), `SceneApi.hpp`(scene_create_empty, scene_init, scene_free, scene_event/render/tick 등), `Arena.hpp`(arena_create, arena_get_state 등 stub). 리소스 로드(scene_create에서 BK/AF 로드), object_render, har_create 등은 미이식.
+- **Engine + main 이식 완료**: `CPP/Engine/hpp/Engine.hpp`에 풀 이벤트 루프·씬 틱·렌더 연동( SDL_PollEvent, 콘솔 열기/닫기, game_state_handle_event, game_state_static_tick/dynamic_tick, video_render_prepare/finish, game_state_render, console_render). `CPP/Game/hpp/GameStateApi.hpp`에 handle_event, render, static_tick, dynamic_tick, get_framebuffer_options, ms_per_dyntick, palette_transform 스텁. `CPP/Video/hpp/Video.hpp`에 video_render_prepare/video_render_finish. `CPP/Engine/main.cpp`에서 SDL_Init → PathManager::set_resource_base(SDL_GetBasePath()) → engine_init/run/close → SDL_Quit. `engine.build.ps1`로 `omf.exe` 빌드( SDL2 정적 링크 시 MinGW에서 추가 시스템 라이브러리 필요할 수 있음).
 
 ### 3.2 현재까지 안 한 것 / 추후 이식할 것 정리
 
@@ -132,9 +150,9 @@
 |------|------|--------|------|
 | **모듈** | Audio (1차 완료, SDL/PSM/Opus 미포함) | src/audio/ | 백엔드(sdl,null), PSM/Opus 소스 등 추후 이식 |
 | **모듈** | Controller (1차 완료, 키보드/네트워크 등 미포함) | src/controller/ | keyboard, joystick, ai, net, rec, spec, SDL2, Enet 등 추후 이식 |
-| **모듈** | Console | src/console/ | 콘솔 명령, game_state 의존 |
-| **모듈** | Game | src/game/ | game_state, protos, objects, gui, scenes (Video/Audio/Controller 등 의존) |
-| **모듈** | Engine + main | src/engine.c, main.c | 초기화·메인 루프, CLI 대신 omf_config.json |
+| **모듈** | Console (1차 stub 완료) | src/console/ | CPP/Console 에 기본 상태 및 API stub 존재. 실제 콘솔 명령, 렌더링, 히스토리/버퍼 등은 Game/Video 이식 단계에서 구현 필요. |
+| **모듈** | Game (protos·objects·scenes API 1차 완료) | src/game/ | CPP/Game 에 타입·ObjectApi·SceneApi·Arena·Har 상수·TickTimer/Serial/Player stub 이식됨. scene_create(리소스 로드), object_render, har_create, gui, 개별 씬(mainmenu, mechlab 등) 로직은 미이식. |
+| **모듈** | Engine + main (이벤트·씬·렌더·리소스 연동 완료) | src/engine.c, main.c | CPP/Engine: engine_run에 SDL_PollEvent, 콘솔 Tab/Backquote, game_state_handle_event, static/dynamic_tick, video_render_prepare/finish, game_state_render, console_render. main에서 SDL_Init → PathManager::set_resource_base → engine_init/run/close → SDL_Quit. omf_config.json·settings는 추후. |
 | **Formats** | PNG·RGBA 디코드 | vga_image, rgba 등 | VgaImage 확장, RGBA 이미지 (필요 시) |
 | **Formats** | Sprite vga_decode 등 | sprite.c | 스프라이트 디코딩 확장 |
 | **Resources** | PathManager 전체 | pathmanager.c | SDL 기반 pm_init, pm_get_local_base_dir, pm_validate_resources 등 |
@@ -150,13 +168,15 @@
 | **Video** | vga_palette (비디오 쪽) | vga_palette.h/c | tint/mix/light_range 등 → 렌더링 파이프라인과 함께 이식 |
 | **Video** | vga_remap | vga_remap.h/c | 리맵 테이블 → vga_state·렌더러와 함께 이식 |
 | **Video** | OpenGL3 렌더러 | renderers/opengl3/ | gl3_renderer, sdl_window, texture, shaders, FBO 등, Epoxy 의존 → Null로 API 검증 후 별도 단계 |
-| **Video** | video_draw* / video_render_* | video.c | draw_surface, render_prepare/finish 등 → 그리기 구현 렌더러 이식 후 |
+| **Video** | video_draw | video.c | video_draw(Surface, x, y) 추가·NullRenderer에 no-op. 씬 배경 그리기 연동됨. video_draw_remap/offset/size 등은 추후 |
 | **Video** | damage_tracker | damage_tracker.h/c | 더티 영역 등 → 렌더링·게임 연동 시 이식 |
 | **Video** | image_line, image_rect 등 | image.c | Image 확장 → 필요 시 이식 |
 | **Video** | surface_sub, surface_write_png 등 | surface.c | Surface 고급 연산 → 필요 시 이식 |
 | **Audio** | SDL 백엔드 | backends/sdl/sdl_backend | SDL2_mixer 의존 → 추후 이식 |
 | **Audio** | PSM/Opus 소스, audio_play_sound, audio_play_music 등 | sources/psm_source, opus_source, audio.c | LibXmp, Opusfile, Resources(sounds_loader, pathmanager) 의존 → 추후 이식 |
 | **Controller** | Keyboard/Joystick/AI/Net/Rec/Spec 컨트롤러 | keyboard, joystick, ai_controller, net_controller, rec_controller, spec_controller | SDL2, Enet, Game 타입(game_state, har, object) 의존 → Game/Net 이식 단계에서 함께 이식 |
+| **Game** | scene_create(리소스 로드), object_render, har_create, 개별 씬(mainmenu, arena 등) | scene.c, object.c, har.c, scenes/*.c | scene_create_with_resources(BK/PCX 로드·배경 Surface)·scene_render(배경 video_draw)·scene_free 연동 완료. object_render, har_create, 개별 씬 로직은 추후 |
+| **Engine** | 풀 메인 루프·씬 틱·렌더·리소스 연동 완료. omf_config.json·settings 추후 | engine.c, main.c | engine_run: 이벤트 루프(SDL_QUIT, 콘솔 열기/닫기, game_state_handle_event), static/dynamic_tick, video_render_prepare/finish, game_state_render, console_render. main: SDL_Init → PathManager::set_resource_base → engine_init/run/close → SDL_Quit. C\lib\bin에서 SDL2 정적 링크 시 MinGW 추가 라이브러리 필요할 수 있음. |
 
 - **정리**: “현재까지 안 한 것”은 **아직 손대지 않은 모듈/기능**, “추후 이식할 것”은 **이미 뼈대를 이식한 모듈 안에서 다음 단계로 미룬 항목**이다.
 
@@ -194,6 +214,9 @@
 | Video | CPP/Video/ | video.test.build.ps1 | video.test.main.cpp |
 | Audio | CPP/Audio/ | audio.test.build.ps1 | audio.test.main.cpp |
 | Controller | CPP/Controller/ | controller.test.build.ps1 | controller.test.main.cpp |
+| Console | CPP/Console/ | console.test.build.ps1 | console.test.main.cpp |
+| Game | CPP/Game/ | game.test.build.ps1 | game.test.main.cpp |
+| Engine | CPP/Engine/ | engine.build.ps1 | main.cpp → omf.exe |
 
 - **전체 실행**: 프로젝트 루트 또는 `CPP` 에서 `.\CPP\00_build_all_modules.ps1` 실행.
 
@@ -213,3 +236,47 @@
 - C 빌드 스크립트: `C/00_build.ps1`
 - **규칙**: C 디렉터리는 수정하지 않고, 모든 변경은 CPP 이하에서만 수행. 외부 라이브러리는 `CPP/ExternalLibrary/hpp` 를 통해 사용.
 - **옵션 설정**: CPP 에서는 명령줄 인자 대신 **`omf_config.json`** 사용. JSON 형식은 추후 옵션 설계 시 정의.
+
+---
+
+## 6. 현재 진행사항·오류·해결 과제
+
+### 6.1 현재까지 진행사항 (최근 반영)
+
+| 구분 | 내용 |
+|------|------|
+| **이벤트 루프** | `engine_run`: SDL_PollEvent, SDL_QUIT, 콘솔 Tab/Backquote 열기·닫기, WINDOWEVENT(minimize/restore), `game_state_handle_event` / `console_event` 분기, `enable_screen_updates` |
+| **씬 틱** | `game_state_static_tick` / `game_state_dynamic_tick` 호출, `new_state` 치환 시 `game_state_clone_free`·해제, `game_state_palette_transform`(no-op), `STATIC_TICKS_MS`·`TICK_EXPIRY_MS`·`MAX_TICKS_PER_FRAME` 적용 |
+| **렌더** | `video_render_prepare` / `video_render_finish`, `game_state_render` → `scene_render` + `scene_render_overlay`, `video_draw(Surface, x, y)` 추가 |
+| **리소스 로드** | main: SDL_Init → `PathManager::set_resource_base(SDL_GetBasePath())` → engine. `scene_create_with_resources`: PathManager·BkLoader로 BK(또는 PCX) 로드, 배경용 `Surface` 캐시, `scene_free`에서 배경·bk_data 해제 |
+| **씬** | `Scene`에 `background_surface`, `scene_render`에서 배경 `video_draw` 후 render 콜백. 씬 ID별 리소스 매핑(SCENE_MENU→BK_MENU, SCENE_LOBBY→PCX_NETARENA 등). Engine에서 `scene_create_with_resources`·`scene_init`·`scene_free` 연동 |
+| **사운드 API** | `audio_play_sound(id, volume, panning, pitch)`, `audio_play_music(resource_id)` 추가. Null 백엔드 no-op. 실제 재생은 sounds_loader/PSM·Opus 이식 후 |
+| **입력** | `KeyboardController.hpp`: SDL 키보드 → ACT_* 플래그. `GameState::menu_ctrl` 연결, `game_state_tick_controllers`·`game_state_static_tick`에서 `controller_tick(menu_ctrl)` 호출. Engine에서 keyboard_controller 생성·해제 |
+| **Formats** | `SdError`를 `openomf::formats` 네임스페이스로 이동해 BkLoader/SceneApi와 일치시킴 |
+
+### 6.2 발생한 오류 및 조치
+
+| 오류 | 원인 | 조치 |
+|------|------|------|
+| `'SdError' in namespace 'openomf::formats' does not name a type` (BkLoader/SceneApi) | `Error.hpp`의 `SdError`가 전역 네임스페이스에 있음 | `Error.hpp`에서 `SdError`를 `namespace openomf { namespace formats { ... } }` 안으로 이동 |
+| Engine 링크 실패: `undefined reference to __imp_SetupDiGetClassDevsA`, `ImmGetContext`, `CoInitializeEx` 등 | `C\lib\bin`의 **SDL2 정적 라이브러리**와 MinGW 링크 시 Windows 시스템 라이브러리 미지정 | `engine.build.ps1`에 `-lsetupapi`, `-limm32`, `-lole32`, `-lopengl32` 등 추가. 환경에 따라 추가 lib 필요하거나 **동적 SDL2**(.dll) 사용 필요 |
+
+### 6.3 해결해야 할 문제점
+
+| 우선순위 | 문제 | 설명 | 권장 조치 |
+|----------|------|------|-----------|
+| **높음** | Engine(omf.exe) 링크 실패 | SDL2 정적 링크 시 MinGW에서 Windows 심볼 미해결. 컴파일은 성공, 링크만 실패 | (1) SDL2 동적 링크로 전환(`libSDL2.dll.a` + dll 배치) 또는 (2) 사용 중인 MinGW/SDL2 빌드에 맞는 시스템 라이브러리 목록 확정 후 `engine.build.ps1`에 반영 |
+| **높음** | 리소스 경로 | `set_resource_base(SDL_GetBasePath())`는 exe 디렉터리 기준. BK/PCX 등은 보통 `data/` 등 하위에 있음 | 실행 시 리소스가 exe 옆에 있도록 배치하거나, `set_resource_base`에 `base + "data"` 등 하위 경로 지정 옵션 추가 |
+| **중간** | 실제 화면 출력 없음 | NullRenderer는 `draw_surface`가 no-op. 배경 그리기 호출 경로는 있으나 픽셀 출력 없음 | OpenGL3(또는 소프트웨어) 렌더러 이식 후 `video_draw`가 실제로 그리도록 연동 |
+| **중간** | 사운드 미재생 | `audio_play_sound`/`audio_play_music` API만 있고, sounds_loader·PSM/Opus 미이식, Null 백엔드 | sounds_loader·SDL 백엔드 또는 PSM/Opus 소스 이식 후 재생 연동 |
+| **중간** | 설정·로그 미연동 | omf_config.json, settings_init/load, log_init 미구현 | 설정 파일 형식 정의 후 로드·엔진/비디오 옵션 연동. 로그는 Utils 이식 시 연동 |
+| **낮음** | 게임 플레이 불가 | 씬 배경만 로드·렌더 경로 있고, 오브젝트·HAR·메뉴 로직·개별 씬(mainmenu, arena 등) 미이식 | object_render, har_create, scene 콜백(메뉴/아레나 등) 단계적 이식 |
+| **낮음** | video_draw_remap/offset/size 미구현 | C의 video_draw_remap, video_draw_offset, video_draw_size 등 | 메뉴/콘솔 등에서 사용 시 Video 쪽에 해당 API 추가 |
+
+### 6.4 빌드·실행 요약
+
+| 항목 | 상태 |
+|------|------|
+| `.\CPP\00_build_all_modules.ps1` (Engine 제외 모듈) | 각 모듈별 스크립트 존재. Engine 제외 시 모두 성공 가정 (Engine은 링크 이슈) |
+| `.\CPP\Engine\engine.build.ps1` (omf.exe) | **컴파일 성공**, **링크 실패**(SDL2 정적 + MinGW 환경) |
+| 실행 파일 실행 | 링크가 성공한 환경에서만 가능. 리소스(MAIN.BK 등)는 exe 기준 경로에 필요 |

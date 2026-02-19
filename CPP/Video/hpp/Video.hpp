@@ -3,6 +3,8 @@
 
 #include "hpp/Renderer.hpp"
 #include "hpp/NullRenderer.hpp"
+#include "hpp/Surface.hpp"
+#include <SDL2/SDL.h>
 #include <cstring>
 #include <cstddef>
 
@@ -86,6 +88,25 @@ inline void video_close() {
     if (s_current.close_context) s_current.close_context(s_current.ctx);
     if (s_current.destroy) s_current.destroy(&s_current);
     std::memset(&s_current, 0, sizeof(Renderer));
+}
+
+/** C video_render_prepare. 현재 렌더러에 prepare 위임. */
+inline void video_render_prepare(unsigned framebuffer_options) {
+    if (s_current.render_prepare)
+        s_current.render_prepare(s_current.ctx, framebuffer_options);
+}
+
+/** C video_render_finish. 현재 렌더러에 finish 위임. */
+inline void video_render_finish() {
+    if (s_current.render_finish)
+        s_current.render_finish(s_current.ctx);
+}
+
+/** C video_draw. 배경/스프라이트 단순 그리기. */
+inline void video_draw(const Surface* src_surface, int x, int y) {
+    if (!src_surface || !s_current.draw_surface) return;
+    SDL_Rect dst = { x, y, src_surface->w, src_surface->h };
+    s_current.draw_surface(s_current.ctx, src_surface, &dst, 0, 0, 0, 255, 255, 0, 0);
 }
 
 } // namespace video
