@@ -103,8 +103,8 @@ $LDFLAGS += "-lshlwapi"
 $LDFLAGS += "-lmingw32"
 $LDFLAGS += "-mconsole"
 
-# Build dir
-Write-Host "Cleaning build directory..." -ForegroundColor Yellow
+# Build dir: full cleanup (exe, all .o, build/resources, build/shaders)
+Write-Host "Cleaning build directory (removing exe, object files, and all build artifacts)..." -ForegroundColor Yellow
 if (Test-Path $BUILD_DIR) {
     Remove-Item -Recurse -Force $BUILD_DIR
 }
