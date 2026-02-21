@@ -1,13 +1,15 @@
 # Simple Direct Build Script for One Must Fall 2097
 Write-Host "=== C++ Build Started ===" -ForegroundColor Magenta
 
-# Settings
-$SRC_DIR = "src"
+# Settings (layers and lib under CPP2 root; run script from CPP2)
 $BUILD_DIR = "build"
-$GAME_RESOURCES_DIR = "resources/game_resources"
-$VCPKG_LIB_DIR = "lib/bin"
-$VCPKG_INCLUDE_DIR = "lib/include"
+$LAYER_ROOTS = @("LAYER_1_UI", "LAYER_2_Application", "LAYER_3_Domain", "LAYER_4_Infrastructure", "LAYER_5_Common")
+$GAME_RESOURCES_DIR = "LAYER_4_Infrastructure/assets/game_resources"
+$SHADERS_DIR = "LAYER_4_Infrastructure/assets/shaders"
+$VCPKG_LIB_DIR = "LAYER_5_Common/lib/bin"
+$VCPKG_INCLUDE_DIR = "LAYER_5_Common/lib/include"
 $OUTPUT_NAME = "openomf.exe"
+$PROJECT_ROOT = (Get-Location).Path
 
 # Compiler: use C++ compiler for entire build (requirement)
 $CXX = "g++"
@@ -17,8 +19,13 @@ $CFLAGS = @()
 $CFLAGS += "-std=c11"
 $CFLAGS += "-O2"
 $CFLAGS += "-w"
-$CFLAGS += "-I$SRC_DIR"
-$CFLAGS += "-I$SRC_DIR/vendored"
+# Layer include order: UI -> Application -> Domain -> Infrastructure -> Common
+$CFLAGS += "-ILAYER_1_UI"
+$CFLAGS += "-ILAYER_2_Application"
+$CFLAGS += "-ILAYER_3_Domain"
+$CFLAGS += "-ILAYER_4_Infrastructure"
+$CFLAGS += "-ILAYER_5_Common"
+$CFLAGS += "-ILAYER_5_Common/vendored"
 $CFLAGS += "-I$VCPKG_INCLUDE_DIR"
 $CFLAGS += "-I$VCPKG_INCLUDE_DIR/SDL2"
 $CFLAGS += "-DENABLE_SDL_AUDIO_BACKEND"
@@ -51,8 +58,12 @@ $CXXFLAGS = @()
 $CXXFLAGS += "-std=c++17"
 $CXXFLAGS += "-O2"
 $CXXFLAGS += "-w"
-$CXXFLAGS += "-I$SRC_DIR"
-$CXXFLAGS += "-I$SRC_DIR/vendored"
+$CXXFLAGS += "-ILAYER_1_UI"
+$CXXFLAGS += "-ILAYER_2_Application"
+$CXXFLAGS += "-ILAYER_3_Domain"
+$CXXFLAGS += "-ILAYER_4_Infrastructure"
+$CXXFLAGS += "-ILAYER_5_Common"
+$CXXFLAGS += "-ILAYER_5_Common/vendored"
 $CXXFLAGS += "-I$VCPKG_INCLUDE_DIR"
 $CXXFLAGS += "-I$VCPKG_INCLUDE_DIR/SDL2"
 $CXXFLAGS += "-DENABLE_SDL_AUDIO_BACKEND"
@@ -103,17 +114,21 @@ $LDFLAGS += "-lshlwapi"
 $LDFLAGS += "-lmingw32"
 $LDFLAGS += "-mconsole"
 
-# Build dir: full cleanup (exe, all .o, build/resources, build/shaders)
-Write-Host "Cleaning build directory (removing exe, object files, and all build artifacts)..." -ForegroundColor Yellow
+# Build dir
+Write-Host "Cleaning build directory..." -ForegroundColor Yellow
 if (Test-Path $BUILD_DIR) {
     Remove-Item -Recurse -Force $BUILD_DIR
 }
 New-Item -ItemType Directory -Path $BUILD_DIR | Out-Null
 
-# Collect sources
+# Collect sources from all layer roots (exclude lib and assets)
+$layerDirs = $LAYER_ROOTS | ForEach-Object {
+    $p = Join-Path $PROJECT_ROOT $_
+    if (Test-Path $p) { $p }
+}
 Write-Host "Collecting source files..." -ForegroundColor Yellow
-$C_FILES = Get-ChildItem -Path $SRC_DIR -Recurse -Filter "*.c" | ForEach-Object { $_.FullName }
-$CPP_FILES = Get-ChildItem -Path $SRC_DIR -Recurse -Filter "*.cpp" | ForEach-Object { $_.FullName }
+$C_FILES = $layerDirs | Get-ChildItem -Recurse -Filter "*.c" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\lib\\|\\assets\\" } | ForEach-Object { $_.FullName }
+$CPP_FILES = $layerDirs | Get-ChildItem -Recurse -Filter "*.cpp" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\lib\\|\\assets\\" } | ForEach-Object { $_.FullName }
 Write-Host "Found $($C_FILES.Count) C source files" -ForegroundColor Green
 Write-Host "Found $($CPP_FILES.Count) C++ source files" -ForegroundColor Green
 
@@ -123,8 +138,7 @@ $OBJECT_FILES = @()
 
 # Compile C files with C++ compiler (g++ treats .c as C source)
 foreach ($source_file in $C_FILES) {
-    $object_file = $source_file -replace "\.c$", ".o"
-    $object_file = $object_file -replace "src\\", "$BUILD_DIR\\"
+    $object_file = $source_file.Replace($PROJECT_ROOT, $BUILD_DIR) -replace "\.c$", ".o"
     $object_dir = Split-Path $object_file -Parent
     if (!(Test-Path $object_dir)) {
         New-Item -ItemType Directory -Path $object_dir -Force | Out-Null
@@ -142,8 +156,7 @@ foreach ($source_file in $C_FILES) {
 
 # Compile C++ files
 foreach ($source_file in $CPP_FILES) {
-    $object_file = $source_file -replace "\.cpp$", ".o"
-    $object_file = $object_file -replace "src\\", "$BUILD_DIR\\"
+    $object_file = $source_file.Replace($PROJECT_ROOT, $BUILD_DIR) -replace "\.cpp$", ".o"
     $object_dir = Split-Path $object_file -Parent
     if (!(Test-Path $object_dir)) {
         New-Item -ItemType Directory -Path $object_dir -Force | Out-Null
@@ -201,11 +214,11 @@ if (Test-Path $GAME_RESOURCES_DIR) {
 
 # Copy shaders
 Write-Host "Copying shader files..." -ForegroundColor Yellow
-if (Test-Path "resources/shaders") {
+if (Test-Path $SHADERS_DIR) {
     $SHADER_BUILD_DIR = "$BUILD_DIR/shaders"
     New-Item -ItemType Directory -Path $SHADER_BUILD_DIR -Force | Out-Null
 
-    $SHADER_FILES = Get-ChildItem -Path "resources/shaders" -File
+    $SHADER_FILES = Get-ChildItem -Path $SHADERS_DIR -File
     $COPIED_COUNT = 0
 
     foreach ($file in $SHADER_FILES) {

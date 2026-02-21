@@ -17,7 +17,12 @@ void *iter_next(iterator *iterator);
 void *iter_peek(iterator *iterator);
 void *iter_prev(iterator *iterator);
 
+#ifdef __cplusplus
+#define foreach(iterator, item) while((item = reinterpret_cast<decltype(item)>(iter_next(&iterator))) != NULL)
+#define foreach_reverse(iterator, item) while((item = reinterpret_cast<decltype(item)>(iter_prev(&iterator))) != NULL)
+#else
 #define foreach(iterator, item) while((item = iter_next(&iterator)) != NULL)
 #define foreach_reverse(iterator, item) while((item = iter_prev(&iterator)) != NULL)
+#endif
 
 #endif // ITERATOR_H

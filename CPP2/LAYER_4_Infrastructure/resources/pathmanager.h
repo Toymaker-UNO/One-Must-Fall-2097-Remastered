@@ -1,6 +1,8 @@
 #ifndef PATHMANAGER_H
 #define PATHMANAGER_H
 
+#include <cstddef>
+
 #include "resources/ids.h"
 
 enum
