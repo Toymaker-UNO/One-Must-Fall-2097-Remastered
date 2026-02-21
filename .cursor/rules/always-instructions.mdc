@@ -2,47 +2,44 @@
 description: 프로젝트 공통 지시사항 (매 세션 적용)
 alwaysApply: true
 ---
-
-[디렉토리 규칙]
-C 디렉토리: 읽을수만 있다. 절대로 수정/삭제 하면 안된다.
-CPP 디렉토리: 읽을수만 있다. 절대로 수정/삭제 하면 안된다.
-CPP2 디렉토리: 자유롭게 수정할 수 있다. 생성/삭제도 가능하다.
+[예외 디렉토리]
+COLA 디렉토리는 본 프로젝트의 스콥이 아니다. 
+COLA 이하의 모든 내용은 수정하지 마라.
 
 
 [프로젝트의 목표]
-C 와 CPP 그리고 CPP2 디렉토리에는 One Must Fall 2097 이라는 고전 게임 소스코드가 들어 있다. 
-CPP2 디렉토리에서 *.h 와 *.c 를 *.h 와 *.cpp 로 변경하는것이 목표이다.
+본 프로젝트는 One Must Fall 2097 이라는 고전 게임 소스코드가 들어 있다. 
+이 고전 게임 소스코드를 리팩토링하여 휴먼 리더빌리티가 좋게 만드는것이 목표이다.
 
 
 [빌드 스크립트]
-프로젝트의 목표를 달성하기 위해서 CPP 에 CMake를 사용해도 좋고, Make 를 사용해도 좋지만
+CMake를 사용해도 좋고, Make 를 사용해도 좋지만
 간단히 bat 파일이나 ps1 으로 빌드 스크립트를 구성해도 좋다.
 가장 쉽고 문제가 없는 방법으로 구현해야 한다. 
-C 의 빌드 스크립트에 있는 GitHub 연동은 필요없다. 
-오직 정상적으로 게임이 실행되는 exe 파일을 C++  컴파일러 / 빌더를 사용하여 만들어 내는것이 중요하다.
+오직 정상적으로 게임이 실행되는 exe 파일을 C++  컴파일러 / 빌더 / 링커를 사용하여 만들어 내는것이 중요하다.
 
 
-[레이어드 아키텍처 (CPP2)]
-CPP2 아래에 레이어 디렉토리가 이름 순으로 오도록 **LAYER_1_UI**, **LAYER_2_Application**, **LAYER_3_Domain**, **LAYER_4_Infrastructure**, **LAYER_5_Common** 을 둔다. 각 레이어 안의 *.h, *.c 는 아래 모듈 구분에 따른다. 상위 레이어만 하위 레이어를 의존할 수 있고, 하위 레이어는 상위 레이어를 참조하면 안 된다.  
+[레이어드 아키텍처]
+레이어 디렉토리가 이름 순으로 오도록 **LAYER_1_UI**, **LAYER_2_Application**, **LAYER_3_Domain**, **LAYER_4_Infrastructure**, **LAYER_5_Common** 을 둔다. 각 레이어 안의 *.h, *.hpp, *.c, *.cpp 는 아래 모듈 구분에 따른다. 상위 레이어만 하위 레이어를 의존할 수 있고, 하위 레이어는 상위 레이어를 참조하면 안 된다.  
 - **resources**(에셋: game_resources, shaders, icons 등)는 **LAYER_4_Infrastructure/assets** 에 둔다.  
 - **lib**(외부 라이브러리 include/bin)는 **LAYER_5_Common/lib** 에 둔다.  
 (레이어 이름은 N-tier / Clean Architecture에서 흔히 쓰이는 용어를 따른다.)
 
 **레이어 1 — UI (사용자 인터페이스)**  
 화면·렌더링·입력과 직접 맞닿는 부분. 진입점도 이 레이어에 두어, 상위(UI)만 하위(Application)를 참조하도록 한다.
-- **main** — main.c: 진입점, CLI(argtable3), 전역 초기화 후 엔진/게임 상태에 제어 넘김.
-- **game/gui** — UI 컴포넌트, 테마, 위젯, 레이아웃 (component, widget, button, label, dialog, sizer, text, text_layout 등).
-- **game/scenes** — 씬 구현: mainmenu/, mechlab/, intro, arena, credits, cutscene, lobby, newsroom, scoreboard, vs, melee, openomf 등.
-- **video** — 비디오 초기화, surface, vga_palette, vga_remap, vga_state, image, damage_tracker; **video/renderers/** — 렌더러 API(renderer.h, common) 및 OpenGL3/null 구현.
+- **main** — main.cpp: 진입점, CLI(argtable3), 전역 초기화 후 엔진/게임 상태에 제어 넘김.
+- **game/gui** — UI 컴포넌트, 테마, 위젯, 레이아웃 (component, widget, button, label, dialog, sizer, filler, menu_background, gauge, progressbar, portrait, spritebutton, spriteimage, text, text_layout, textinput, textselector, textslider, trn_menu, trnselect, xysizer, theme, gui_frame 등).
+- **game/scenes** — 씬 구현: mainmenu/, mechlab/(lab_dash_*, lab_menu_*, button_details, lab_har_constants 등), intro, arena, credits, cutscene, lobby, newsroom, scoreboard, vs, melee, openomf 등.
+- **video** — 비디오 초기화(video), surface, vga_palette, vga_remap, vga_state, image, color, enums, damage_tracker; **video/renderers/** — 렌더러 API(renderer.h, common), null 구현, OpenGL3 구현(gl3_renderer, sdl_window, helpers: bindings, fbo, object_array, remaps, render_target, shaders, shared, texture, texture_atlas, ubo, vao, vbo).
 - **console** — 개발자 콘솔 UI, 명령 등록/실행 (console, console_cmd, console_type).
 
 **레이어 2 — Application (애플리케이션/유스케이스)**  
 메인 루프, 게임 흐름 제어. UI 레이어를 직접 include하지 않고, 씬 등은 인터페이스(protos/scene)로만 참조한다.
-- **engine** — engine.c/h: 서브시스템 초기화 순서, 메인 루프, 틱 처리.
-- **game/game_state** — 게임 상태 생성/해제, 이벤트·렌더·틱 디스패치, 씬 전환, 플레이어/오브젝트 조회.
+- **engine** — engine.cpp/h: 서브시스템 초기화 순서, 메인 루프, 틱 처리.
+- **game/game_state** — 게임 상태 생성/해제(game_state_type), 이벤트·렌더·틱 디스패치, 씬 전환, 플레이어/오브젝트 조회.
 - **game/game_player** — 플레이어 상태, HAR/캐릭터 할당.
-- **game/protos/scene** — 씬 추상(생성, 이벤트, 렌더, 틱 콜백); 씬 타입 등록은 game_state에서 수행.
-- **game/utils** — 설정(settings), 직렬화(serial), 틱 타이머(ticktimer), 포맷팅, 점수, 버전, NAT 등 엔진·게임 상태 지원 유틸.
+- **game/protos/scene** — 씬 추상(생성, 이벤트, 렌더, 틱 콜백); **game/protos/fight_stats** — 전투 통계; 씬 타입 등록은 game_state에서 수행.
+- **game/utils** — 설정(settings), 직렬화(serial), 틱 타이머(ticktimer), 포맷팅(formatting), 점수(score), 버전(version), NAT(nat), har_screencap 등 엔진·게임 상태 지원 유틸.
 
 **레이어 3 — Domain (도메인)**  
 게임 규칙과 핵심 엔티티(오브젝트, 충돌, 플레이어 로직 등).
@@ -54,14 +51,14 @@ CPP2 아래에 레이어 디렉토리가 이름 순으로 오도록 **LAYER_1_UI
 
 **레이어 4 — Infrastructure (인프라)**  
 파일 포맷, 리소스 로딩, 오디오·입력 등 외부 연동(어댑터).
-- **formats** — OMF2097 파일 포맷: af, bk, bkanim, pcx, palette, vga_image, script, rec, rec_assertion, language, fonts, move, score, pilot, chr, pic, sounds, taglist, tournament, error 등; **formats/internal** — reader, writer, memreader, memwriter.
+- **formats** — OMF2097 파일 포맷: af, bk, bkanim, pcx, palette, vga_image, rgba_image, script, rec, rec_assertion, language, fonts, move, score, pilot, chr, pic, sounds, taglist, taglist_helpers, tournament, setup, altpal, animation, error 등; **formats/internal** — reader, writer, memreader, memwriter.
 - **resources** — 에셋 로딩·관리: pathmanager, ids, bk_loader, af_loader, af_move, animation, sprite, fonts, languages, sounds_loader, trnmanager, sgmanager, pilots, scores, bk_info.
-- **audio** — 오디오 API; **audio/backends** — SDL/null 백엔드; **audio/sources** — PSM, Opus 등 음원 소스.
+- **audio** — 오디오 API(audio); **audio/backends** — SDL/null 백엔드; **audio/sources** — music_source, PSM(psm_source), Opus(opus_source) 등 음원 소스.
 - **controller** — 입력 추상화(controller); keyboard, joystick, game_controller_db, ai_controller, net_controller, rec_controller, spec_controller 구현.
 
 **레이어 5 — Common (공통)**  
 레이어 무관 공통 코드(유틸, 자료구조, 서드파티 래퍼).
-- **utils** — allocator, log, io, config, str, vector, list, hashmap, array, iterator, random, png_reader, png_writer, scandir, time_fmt, c_string_util, cp437, ringbuffer, msgbox, crash, miscmath.
+- **utils** — allocator, log, io, config, str, vector, list, hashmap, array, iterator, random, png_reader, png_writer, scandir, time_fmt, c_string_util, c_array_util, cp437, ringbuffer, msgbox, crash, miscmath, vec, compat 등.
 - **vendored** — 서드파티(예: argtable3) 포함.
 
 **의존 방향:** UI → Application → Domain → Infrastructure → Common. main은 레이어1(UI)에 두어 진입점이 상위 레이어에 있게 하고, Application은 씬 구현이 아닌 씬 인터페이스만 참조하여 레이어2→1 역참조가 발생하지 않도록 한다. 리팩터 시 이 순서와 모듈 경계를 지키고, 상위 레이어 타입/함수가 하위로 누수되지 않도록 한다.
